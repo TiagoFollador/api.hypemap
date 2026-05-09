@@ -140,9 +140,57 @@ docker compose up -d
 
 ---
 
-## Próximos passos (Parts 2–5)
+## Auth API (Part 2)
 
-- **Part 2:** Auth Service — JWT RS256, register/login/refresh, DELETE /users/me
+### Endpoints
+
+| Método | Rota | Auth | Descrição |
+|---|---|---|---|
+| POST | `/v1/auth/register` | — | Cria conta, retorna tokens |
+| POST | `/v1/auth/login` | — | Autentica, retorna tokens (rate-limit: 10/min por IP) |
+| POST | `/v1/auth/refresh` | — | Rotaciona refresh token |
+| GET | `/v1/users/me` | Bearer | Perfil do usuário autenticado |
+| DELETE | `/v1/users/me` | Bearer | Apaga conta e todos os dados de localização |
+
+### Exemplos
+
+```bash
+# Registrar
+curl -X POST http://localhost:3000/v1/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"handle":"fulano","email":"fu@example.com","password":"senha123"}'
+# → 201 { "accessToken": "...", "refreshToken": "..." }
+
+# Login
+curl -X POST http://localhost:3000/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"fu@example.com","password":"senha123"}'
+# → 200 { "accessToken": "...", "refreshToken": "..." }
+
+# Perfil (substitua TOKEN pelo accessToken)
+curl http://localhost:3000/v1/users/me \
+  -H 'Authorization: Bearer TOKEN'
+# → 200 { "id": "...", "handle": "fulano", "email": "fu@example.com", "createdAt": "..." }
+
+# Rotacionar token
+curl -X POST http://localhost:3000/v1/auth/refresh \
+  -H 'Content-Type: application/json' \
+  -d '{"refreshToken":"..."}'
+# → 200 { "accessToken": "...", "refreshToken": "..." }
+```
+
+### Segurança
+
+- Tokens JWT RS256 — accessToken expira em 15 min, refreshToken em 30 dias
+- Refresh tokens armazenados como `sha256(token)` — raw token nunca persiste
+- Rotação de refresh token: token usado uma vez e invalidado
+- Login usa dummy bcrypt em caso de e-mail não encontrado (evita timing attack)
+- Rate-limit em `/auth/login`: 10 req/min por IP
+
+---
+
+## Próximos passos (Parts 3–5)
+
 - **Part 3:** Location Ingest API — POST /locations, GET /map/friends, Squads
 - **Part 4:** WebSocket Presence Gateway — Socket.IO v4, Redis adapter, fan-out
 - **Part 5:** Background Jobs — heatmap, partition lifecycle, health endpoint, Dockerfile
