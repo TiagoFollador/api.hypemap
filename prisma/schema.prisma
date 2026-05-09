@@ -14,11 +14,12 @@ model User {
   passwordHash String   @map("password_hash") @db.Text
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  liveLocation  LiveLocation?
-  friendEdges   FriendEdge[]  @relation("UserFriendEdges")
-  friendOf      FriendEdge[]  @relation("FriendEdges")
-  consentLogs   ConsentLog[]
-  squadMembers  SquadMember[]
+  liveLocation   LiveLocation?
+  friendEdges    FriendEdge[]   @relation("UserFriendEdges")
+  friendOf       FriendEdge[]   @relation("FriendEdges")
+  consentLogs    ConsentLog[]
+  squadMembers   SquadMember[]
+  refreshTokens  RefreshToken[]
 
   @@map("app_user")
 }
@@ -57,6 +58,20 @@ model ConsentLog {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("consent_log")
+}
+
+// Refresh token rotation table. Raw token is never stored — only sha256(token).
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  tokenHash String    @unique @map("token_hash") @db.Text
+  userId    String    @map("user_id") @db.Uuid
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  usedAt    DateTime? @map("used_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_token")
 }
 
 model Squad {
