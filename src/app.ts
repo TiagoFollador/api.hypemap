@@ -7,6 +7,7 @@ import { userRoutes } from './routes/v1/users.js'
 import { locationRoutes } from './routes/v1/locations.js'
 import { mapRoutes } from './routes/v1/map.js'
 import { squadRoutes } from './routes/v1/squads.js'
+import { healthRoutes } from './routes/health.js'
 
 export async function buildApp(opts: Partial<FastifyServerOptions> = {}) {
   const app = Fastify({
@@ -23,6 +24,7 @@ export async function buildApp(opts: Partial<FastifyServerOptions> = {}) {
   await app.register(locationRoutes, { prefix: '/v1' })
   await app.register(mapRoutes,      { prefix: '/v1' })
   await app.register(squadRoutes,    { prefix: '/v1' })
+  await app.register(healthRoutes)
 
   return app
 }
