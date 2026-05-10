@@ -13,6 +13,18 @@ declare module 'socket.io' {
   }
 }
 
+let gatewayPub: Redis | null = null
+let gatewaySub: Redis | null = null
+
+export async function stopGateway(): Promise<void> {
+  await Promise.all([
+    gatewayPub?.quit(),
+    gatewaySub?.quit(),
+  ])
+  gatewayPub = null
+  gatewaySub = null
+}
+
 export function attachGateway(
   httpServer: HttpServer<typeof IncomingMessage, typeof ServerResponse>,
 ): Server {
@@ -25,6 +37,8 @@ export function attachGateway(
   const sub = new Redis(env.REDIS_URL)
   pub.on('error', (err) => console.error('redis pub error:', err))
   sub.on('error', (err) => console.error('redis sub error:', err))
+  gatewayPub = pub
+  gatewaySub = sub
   io.adapter(createAdapter(pub, sub))
 
   io.use((socket, next) => {
