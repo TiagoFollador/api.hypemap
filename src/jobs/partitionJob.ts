@@ -3,8 +3,8 @@ import { pgPool } from '../db/pg.js'
 import { env } from '../config/env.js'
 
 export function partitionTableName(date: Date): string {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const y = date.getUTCFullYear()
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0')
   return `location_event_${y}_${m}`
 }
 
