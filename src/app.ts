@@ -7,10 +7,14 @@ import { userRoutes } from './routes/v1/users.js'
 import { locationRoutes } from './routes/v1/locations.js'
 import { mapRoutes } from './routes/v1/map.js'
 import { squadRoutes } from './routes/v1/squads.js'
+import { healthRoutes } from './routes/health.js'
 
 export async function buildApp(opts: Partial<FastifyServerOptions> = {}) {
   const app = Fastify({
-    logger: opts.logger ?? true,
+    logger: opts.logger ?? {
+      // Redact Authorization header from all request logs
+      redact: ['req.headers.authorization'],
+    },
     ...opts,
   })
 
@@ -18,11 +22,19 @@ export async function buildApp(opts: Partial<FastifyServerOptions> = {}) {
   await app.register(rateLimit, { max: 100, timeWindow: '1 minute' })
   await app.register(authPlugin)
 
-  await app.register(authRoutes,    { prefix: '/v1' })
-  await app.register(userRoutes,    { prefix: '/v1' })
+  // Enrich request logs with userId when the route requires auth
+  app.addHook('preHandler', async (request) => {
+    if (request.userId) {
+      request.log = request.log.child({ userId: request.userId })
+    }
+  })
+
+  await app.register(authRoutes,     { prefix: '/v1' })
+  await app.register(userRoutes,     { prefix: '/v1' })
   await app.register(locationRoutes, { prefix: '/v1' })
   await app.register(mapRoutes,      { prefix: '/v1' })
   await app.register(squadRoutes,    { prefix: '/v1' })
+  await app.register(healthRoutes)
 
   return app
 }
